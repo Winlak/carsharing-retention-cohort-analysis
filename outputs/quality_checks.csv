@@ -1,0 +1,9 @@
+check,failed_rows,rows_checked,failure_rate,result
+users.primary_key_unique,0,6000,0.0,pass
+rides.primary_key_unique,0,26449,0.0,pass
+rides.user_foreign_key,0,26449,0.0,pass
+completed.completed_at_not_null,0,25353,0.0,pass
+failed.completed_at_null,0,1096,0.0,pass
+timestamps.not_after_data_end,0,26449,0.0,pass
+completed_at.not_after_data_end,0,25353,0.0,pass
+status.accepted_values,0,26449,0.0,pass
