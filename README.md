@@ -52,7 +52,7 @@ make reproduce
 1. генерирует synthetic `users` и `rides` из seed `20240801`;
 2. запускает quality checks и загружает CSV в временную SQLite-базу;
 3. выполняет SQL и pandas-анализ, сохраняет таблицы, графики и Markdown-отчёт;
-4. исполняет ноутбук сверху вниз;
+4. исполняет ноутбук сверху вниз и канонизирует run-specific metadata: таблицы и текстовые outputs сохраняются, а inline-копии графиков убираются (канонические PNG уже лежат в `figures/`);
 5. запускает линтер и тесты.
 
 Полезные отдельные команды:
@@ -79,7 +79,7 @@ python scripts/run_pipeline.py --n-users 1200 --seed 7
 
 ## Качество и воспроизводимость
 
-CI в GitHub Actions выполняет `make reproduce` и `make check` на чистом окружении. В тестах проверяются:
+CI в GitHub Actions выполняет `make reproduce` на чистом окружении, затем требует пустой `git diff` и проверяет состав generated-файлов. В тестах проверяются:
 
 - детерминированность генератора и базовые инварианты;
 - корректные numerator/denominator для classical и rolling retention;

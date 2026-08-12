@@ -28,6 +28,27 @@ PALETTE = {
 }
 
 
+def _assert_cohort_parity(
+    pandas_frame: pd.DataFrame, sql_frame: pd.DataFrame, metric_column: str
+) -> None:
+    """Fail when independent SQL and pandas cohort counts or rates diverge."""
+    comparison = pandas_frame.merge(
+        sql_frame, on=["cohort_week", "cohort_age"], suffixes=("_pd", "_sql")
+    )
+    if len(comparison) != len(pandas_frame):
+        raise ValueError(f"Pandas and SQL {metric_column} retention row counts disagree")
+    for count_column in ("eligible_users", "retained_users"):
+        if not np.array_equal(
+            comparison[f"{count_column}_pd"].to_numpy(dtype=int),
+            comparison[f"{count_column}_sql"].to_numpy(dtype=int),
+        ):
+            raise ValueError(f"Pandas and SQL {metric_column} {count_column} disagree")
+    if not np.allclose(
+        comparison[f"{metric_column}_pd"], comparison[f"{metric_column}_sql"], atol=1e-6
+    ):
+        raise ValueError(f"Pandas and SQL {metric_column} retention disagree")
+
+
 def _save(figure: plt.Figure, path: Path) -> None:
     figure.tight_layout()
     figure.savefig(path, dpi=170, bbox_inches="tight", facecolor="white")
@@ -199,21 +220,33 @@ def run_analysis(
     # Independent cross-check: pandas and SQL use the same definitions but
     # distinct implementations, so a row-level mismatch stops the pipeline.
     pandas_classic = classic.rename(columns={"retention": "classical_retention"})
-    compare = pandas_classic.merge(
-        sql_classic, on=["cohort_week", "cohort_age"], suffixes=("_pd", "_sql")
-    )
-    if not np.allclose(
-        compare["classical_retention_pd"], compare["classical_retention_sql"], atol=1e-6
-    ):
-        raise ValueError("Pandas and SQL classical retention disagree")
+    _assert_cohort_parity(pandas_classic, sql_classic, "classical_retention")
     pandas_rolling = rolling.rename(columns={"retention": "rolling_retention"})
-    compare_rolling = pandas_rolling.merge(
-        sql_rolling, on=["cohort_week", "cohort_age"], suffixes=("_pd", "_sql")
-    )
-    if not np.allclose(
-        compare_rolling["rolling_retention_pd"], compare_rolling["rolling_retention_sql"], atol=1e-6
+    _assert_cohort_parity(pandas_rolling, sql_rolling, "rolling_retention")
+    milestone_compare = milestones.merge(sql_milestones, on="cohort_week", suffixes=("_pd", "_sql"))
+    if len(milestone_compare) != len(milestones):
+        raise ValueError("Pandas and SQL D1/D7/D30 cohort rows disagree")
+    for count_column in ("eligible_d1", "eligible_d7", "eligible_d30"):
+        if not np.array_equal(
+            milestone_compare[f"{count_column}_pd"].fillna(0).to_numpy(dtype=int),
+            milestone_compare[f"{count_column}_sql"].fillna(0).to_numpy(dtype=int),
+        ):
+            raise ValueError(f"Pandas and SQL {count_column} disagree")
+    for metric_column in (
+        "classic_d1",
+        "classic_d7",
+        "classic_d30",
+        "rolling_d1",
+        "rolling_d7",
+        "rolling_d30",
     ):
-        raise ValueError("Pandas and SQL rolling retention disagree")
+        if not np.allclose(
+            milestone_compare[f"{metric_column}_pd"],
+            milestone_compare[f"{metric_column}_sql"],
+            atol=1e-6,
+            equal_nan=True,
+        ):
+            raise ValueError(f"Pandas and SQL {metric_column} disagree")
     if len(sql_outcomes) != len(outcomes):
         raise ValueError("SQL and pandas D30 eligibility populations disagree")
 

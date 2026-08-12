@@ -8,6 +8,7 @@ all:
 
 notebook:
 	$(PYTHON) -m jupyter nbconvert --execute --to notebook --inplace notebooks/carsharing_retention_case.ipynb --ExecutePreprocessor.timeout=180
+	$(PYTHON) scripts/normalize_notebook.py notebooks/carsharing_retention_case.ipynb
 
 check:
 	$(PYTHON) -m ruff format --check .

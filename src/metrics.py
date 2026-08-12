@@ -115,6 +115,10 @@ def milestone_retention(classic: pd.DataFrame, rolling: pd.DataFrame) -> pd.Data
                 index="cohort_week", columns="cohort_age", values="eligible_users"
             )
             eligibility.columns = [f"eligible_d{int(column)}" for column in eligibility.columns]
+            # A cohort can exist at D1 but not have reached D30. Its milestone
+            # denominator is explicitly zero rather than an ambiguous missing
+            # value; the corresponding retention rate remains NaN / not shown.
+            eligibility = eligibility.fillna(0).astype(int)
     if eligibility is None:  # defensive guard for future refactors
         raise ValueError("Classical retention is required for milestone eligibility")
     return pd.concat([*parts, eligibility], axis=1).reset_index().sort_values("cohort_week")
