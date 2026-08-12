@@ -53,8 +53,9 @@ def _assert_cohort_parity(
 def _save(figure: plt.Figure, path: Path) -> None:
     figure.tight_layout()
     # PNG encoders can yield different binary streams on macOS and Linux even
-    # for identical pixels. Stable SVG paths retain the visual evidence while
-    # making the tracked artifact reproducible across the locked CI platforms.
+    # for identical pixels. The local, reproducible pipeline therefore saves
+    # vector SVGs; CI verifies their exact manifest while keeping font-rendered
+    # artifacts outside version control.
     with mpl.rc_context({"svg.fonttype": "path", "svg.hashsalt": "carsharing-retention-v1"}):
         figure.savefig(
             path, format="svg", bbox_inches="tight", facecolor="white", metadata={"Date": None}

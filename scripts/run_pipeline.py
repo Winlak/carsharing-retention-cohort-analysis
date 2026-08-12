@@ -19,6 +19,7 @@ from src.synthetic_data import (  # noqa: E402
     GenerationConfig,
     write_synthetic_data,
 )
+from src.visual_handoff import build_visual_handoff  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -69,6 +70,7 @@ def main() -> None:
         data_end=data_end,
         destination=ROOT / "reports" / "analytical_report.md",
     )
+    build_visual_handoff(outputs, ROOT / "docs" / "visualization_handoff.html")
     print(f"Pipeline completed: {len(users):,} users, {len(rides):,} ride attempts")
     print(f"Report: {ROOT / 'reports' / 'analytical_report.md'}")
 

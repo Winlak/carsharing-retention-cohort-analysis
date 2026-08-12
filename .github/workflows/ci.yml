@@ -26,3 +26,4 @@ jobs:
           git diff --exit-code
           test -z "$(git ls-files --others --exclude-standard)"
           test "$(find data/generated -maxdepth 1 -type f -exec basename {} \; | LC_ALL=C sort)" = "$(printf '%s\n' analysis.sqlite metadata.json rides.csv users.csv)"
+          test "$(find figures -maxdepth 1 -type f ! -name .gitkeep -exec basename {} \; | LC_ALL=C sort)" = "$(printf '%s\n' cohort_heatmap.svg early_week_vs_d30.svg first_experience_vs_d30.svg retention_curves.svg ride_gap_distribution.svg)"
