@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -51,7 +52,19 @@ def _assert_cohort_parity(
 
 def _save(figure: plt.Figure, path: Path) -> None:
     figure.tight_layout()
-    figure.savefig(path, dpi=170, bbox_inches="tight", facecolor="white")
+    # PNG encoders can yield different binary streams on macOS and Linux even
+    # for identical pixels. Stable SVG paths retain the visual evidence while
+    # making the tracked artifact reproducible across the locked CI platforms.
+    with mpl.rc_context({"svg.fonttype": "path", "svg.hashsalt": "carsharing-retention-v1"}):
+        figure.savefig(
+            path, format="svg", bbox_inches="tight", facecolor="white", metadata={"Date": None}
+        )
+    # Matplotlib wraps long path data with trailing spaces. Remove that
+    # formatting noise so a newly generated SVG has one canonical encoding.
+    canonical_svg = "\n".join(
+        line.rstrip() for line in path.read_text(encoding="utf-8").splitlines()
+    )
+    path.write_text(f"{canonical_svg}\n", encoding="utf-8")
     plt.close(figure)
 
 
@@ -250,25 +263,25 @@ def run_analysis(
     if len(sql_outcomes) != len(outcomes):
         raise ValueError("SQL and pandas D30 eligibility populations disagree")
 
-    _cohort_heatmap(classic, figures_dir / "cohort_heatmap.png")
+    _cohort_heatmap(classic, figures_dir / "cohort_heatmap.svg")
     classic_curve, rolling_curve = _retention_curves(
-        classic, rolling, figures_dir / "retention_curves.png"
+        classic, rolling, figures_dir / "retention_curves.svg"
     )
     _interval_bars(
         early_segment,
         "early_activity_segment",
         "D30 и количество завершённых поездок в дни 1–7",
-        figures_dir / "early_week_vs_d30.png",
+        figures_dir / "early_week_vs_d30.svg",
         PALETTE["blue"],
     )
     _interval_bars(
         experience_segment,
         "first_attempt_status",
         "D30 и исход первой попытки бронирования",
-        figures_dir / "first_experience_vs_d30.png",
+        figures_dir / "first_experience_vs_d30.svg",
         PALETTE["rose"],
     )
-    gap_summary = _gap_distribution(sql_intervals, figures_dir / "ride_gap_distribution.png")
+    gap_summary = _gap_distribution(sql_intervals, figures_dir / "ride_gap_distribution.svg")
 
     outputs = {
         "quality_checks": profile,

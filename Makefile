@@ -4,9 +4,9 @@ PYTHON ?= python3
 
 all:
 	$(PYTHON) scripts/run_pipeline.py
-	$(PYTHON) scripts/create_notebook.py
 
 notebook:
+	$(PYTHON) scripts/create_notebook.py
 	$(PYTHON) -m jupyter nbconvert --execute --to notebook --inplace notebooks/carsharing_retention_case.ipynb --ExecutePreprocessor.timeout=180
 	$(PYTHON) scripts/normalize_notebook.py notebooks/carsharing_retention_case.ipynb
 
